@@ -1,0 +1,23 @@
+{
+  "historical_notebook_results": {
+    "tfidf_logistic_regression": {
+      "accuracy": 0.9071,
+      "macro_f1": 0.4617
+    },
+    "bert_qa": {
+      "valid_qa_examples": 137408,
+      "training_subset_size": 20000,
+      "epochs": 1,
+      "evaluation_loss": 0.3206
+    },
+    "manual_team_validation": {
+      "reviewed_ai_generated_candidates": 2400,
+      "retained_correct_trait_records": 844
+    }
+  },
+  "notes": [
+    "Metrics were recorded from the original capstone notebook.",
+    "Public sample data is provided for demonstration only.",
+    "The 844 retained records came from team validation, not from a solo manual validation process."
+  ]
+}

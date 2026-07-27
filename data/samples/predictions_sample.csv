@@ -1,0 +1,11 @@
+source_file,page,species_name,sentence,predicted_trait,predicted_value,method
+synthetic_apj_001.txt,1,Acacia demoensis,Buds occur on a woody rhizome.,bud_bank_location,rhizome,Recorded BERT-QA example
+synthetic_apj_001.txt,1,Acacia demoensis,Propagation is commonly carried out from seed.,propagation_method,seed,Recorded BERT-QA example
+synthetic_apj_001.txt,2,Banksia examplea,Stem cuttings strike readily during spring.,propagation_method,cutting,Recorded BERT-QA example
+synthetic_apj_001.txt,2,Banksia examplea,The plant may be divided when the rhizome forms several segments.,propagation_method,division,Recorded BERT-QA example
+synthetic_apj_002.txt,3,Grevillea ficta,Seeds benefit from soaking before sowing.,germination_treatment,soaking,Recorded BERT-QA example
+synthetic_apj_002.txt,3,Grevillea ficta,Seed dormancy may be reduced by smoke treatment.,germination_treatment,smoke,Recorded BERT-QA example
+synthetic_apj_003.txt,5,Melaleuca testii,Flowers are usually observed in spring.,flowering_time,spring,Recorded BERT-QA example
+synthetic_apj_004.txt,7,Eucalyptus demoensis,Seeds germinate after hot water pretreatment.,germination_treatment,hot water,Recorded BERT-QA example
+synthetic_apj_005.txt,9,Anigozanthos samplei,Rhizome segments should be kept moist.,propagation_method,rhizome,Recorded BERT-QA example
+synthetic_apj_006.txt,12,Viola ficta,Viable seeds respond to cold stratification.,germination_treatment,stratification,Recorded BERT-QA example
