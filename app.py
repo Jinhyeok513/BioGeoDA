@@ -51,19 +51,19 @@ TFIDF_RECORDED_EXAMPLES = pd.DataFrame(
             "sentence": "Buds occur on a woody rhizome.",
             "predicted_class": "rhizome",
             "top_candidate_classes": "rhizome, crown, lignotuber",
-            "status": "Recorded baseline example",
+            "status": "Illustrative synthetic example",
         },
         {
             "sentence": "Flowers are usually observed in spring.",
             "predicted_class": "spring",
             "top_candidate_classes": "spring, summer, may",
-            "status": "Recorded baseline example",
+            "status": "Illustrative synthetic example",
         },
         {
             "sentence": "Seeds germinate after hot water pretreatment.",
             "predicted_class": "hot water",
             "top_candidate_classes": "hot water, smoke, stratification",
-            "status": "Recorded baseline example",
+            "status": "Illustrative synthetic example",
         },
     ]
 )
@@ -344,42 +344,33 @@ def render_overview_page() -> None:
 
     st.header("Project Overview")
     st.write(
-        "BioGeoDA explored how NLP could turn unstructured Australian plant literature "
-        "into structured trait records. This portfolio app shows the AI/NLP pipeline "
-        "using synthetic data and clearly separates implemented AI components from "
-        "the broader team system."
+        "An end-to-end NLP prototype for converting OCR-processed botanical sentences "
+        "into structured plant-trait records. The implementation covers text "
+        "normalisation, trait-value constraints, extractive-QA dataset construction, "
+        "baseline classification, rule-based post-processing, and evaluation."
     )
 
     st.subheader("System Flow")
     flow = pd.DataFrame(
         [
             ("1", "APJ plant literature", "Source documents"),
-            ("2", "PDF collection and OCR", "Original team context"),
-            ("3", "Species and sentence retrieval", "Original team context"),
-            ("4", "AI trait extraction", "Implemented here with safe examples"),
-            ("5", "Rule-based post-processing", "Implemented here"),
-            ("6", "Manual validation", "Entire team"),
-            ("7", "Structured trait database", "Original team context"),
+            ("2", "Unicode and whitespace normalisation", "Implemented"),
+            ("3", "Trait-value mapping", "Implemented"),
+            ("4", "TF-IDF classification / BERT QA", "Training and inference modules"),
+            ("5", "Propagation post-processing", "Live rule-based extraction"),
+            ("6", "Metric and error analysis", "Historical results documented"),
+            ("7", "Standard-schema CSV output", "Implemented"),
         ],
         columns=["Step", "Pipeline stage", "Scope in this repository"],
     )
     st.table(flow)
 
-    st.subheader("Project Roles")
-    roles = pd.DataFrame(
-        [
-            ("PDF collection and OCR", "Hyeryeon Lee"),
-            ("Initial document retrieval", "Hyeryeon Lee"),
-            ("Trait mapping and QA dataset", "Jinhyeok Kim"),
-            ("TF-IDF and BERT modelling", "Jinhyeok Kim"),
-            ("AI development support", "Jinhyeok Kim, Hyeryeon Lee"),
-            ("Database and SQL", "Other team members"),
-            ("Manual validation", "Entire team"),
-            ("New portfolio application", "Jinhyeok Kim"),
-        ],
-        columns=["Pipeline stage", "Contribution"],
+    st.subheader("Recorded Outcomes")
+    render_metric_tiles()
+    st.caption(
+        "Metrics are preserved from the original experiment notebooks; the public "
+        "synthetic dataset is intentionally not presented as a benchmark."
     )
-    st.table(roles)
 
 
 def render_data_pipeline_page() -> None:
@@ -423,7 +414,10 @@ def render_trait_extraction_page() -> None:
 
     with bert_tab:
         st.subheader("Recorded BERT QA")
-        st.info("This tab displays recorded synthetic examples. It is not live BERT inference.")
+        st.info(
+            "This tab illustrates the recorded BERT-QA workflow with synthetic text. "
+            "Rows are demonstrations, not reproduced historical predictions."
+        )
         recorded = load_recorded_predictions()
         trait_name = st.selectbox("Recorded trait", get_recorded_traits(recorded), key="bert_trait")
         candidates = recorded[recorded["predicted_trait"] == trait_name].reset_index(drop=True)
@@ -440,7 +434,7 @@ def render_trait_extraction_page() -> None:
                 "Question": f"What is the {str(row['predicted_trait']).replace('_', ' ')}?",
                 "Extracted answer": str(row["predicted_value"]),
                 "Method": "BERT extractive QA",
-                "Status": "Recorded historical prediction",
+                "Status": "Synthetic workflow demonstration",
                 "Confidence": "Not calibrated",
             }
         )
