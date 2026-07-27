@@ -2,9 +2,9 @@
 
 [![tests](https://github.com/Jinhyeok513/BioGeoDA/actions/workflows/tests.yml/badge.svg)](https://github.com/Jinhyeok513/BioGeoDA/actions/workflows/tests.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/demo-Streamlit-FF4B4B.svg)](https://biogeoda-trait-explorer.streamlit.app)
+[![Streamlit](https://img.shields.io/badge/demo-Streamlit-FF4B4B.svg)](https://at4fgpvm22qsheizvjagyt.streamlit.app/)
 
-**[Launch the live Trait Explorer](https://biogeoda-trait-explorer.streamlit.app)**
+**[Launch the live Trait Explorer](https://at4fgpvm22qsheizvjagyt.streamlit.app/)**
 
 ## Overview
 
@@ -119,7 +119,7 @@ individual model score.
 
 ## Streamlit Demo
 
-The [BioGeoDA Trait Explorer](https://biogeoda-trait-explorer.streamlit.app)
+The [BioGeoDA Trait Explorer](https://at4fgpvm22qsheizvjagyt.streamlit.app/)
 exposes the pipeline as six focused views:
 
 - preprocessing, trait mapping, and QA span construction;
@@ -132,6 +132,8 @@ exposes the pipeline as six focused views:
 Live BERT inference activates only when a fine-tuned checkpoint exists locally.
 The application never substitutes an unfine-tuned base model or fabricates a
 confidence score.
+
+![BioGeoDA Trait Explorer showing live propagation extraction](biogeoda-streamlit-1785171871573.jpg)
 
 ## Repository Structure
 
