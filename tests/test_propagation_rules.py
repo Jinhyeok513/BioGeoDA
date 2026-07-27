@@ -25,8 +25,8 @@ def test_cutting_keyword_detection():
 
 
 def test_division_keyword_detection():
-    result = extract_propagation_methods("The rhizome forms several segments.", keywords())
-    assert {"category": "Division", "matched_keyword": "rhizome"} in result
+    result = extract_propagation_methods("The plant is propagated by rhizome division.", keywords())
+    assert {"category": "Division", "matched_keyword": "rhizome division"} in result
 
 
 def test_multiple_propagation_categories():
@@ -37,3 +37,15 @@ def test_multiple_propagation_categories():
 
 def test_no_keyword_returns_empty_list():
     assert extract_propagation_methods("The leaves are glossy and opposite.", keywords()) == []
+
+
+def test_ambiguous_words_do_not_trigger_propagation():
+    ambiguous_sentences = [
+        "The leaves are firm.",
+        "Remove damaged flowers.",
+        "The stem has a swollen node.",
+        "Fire affected the population.",
+        "A rhizome occurs below ground.",
+    ]
+    for sentence in ambiguous_sentences:
+        assert extract_propagation_methods(sentence, keywords()) == []
