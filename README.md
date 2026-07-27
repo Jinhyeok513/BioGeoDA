@@ -1,127 +1,179 @@
 # BioGeoDA NLP Pipeline
 
-## Project Overview
+[![tests](https://github.com/Jinhyeok513/BioGeoDA/actions/workflows/tests.yml/badge.svg)](https://github.com/Jinhyeok513/BioGeoDA/actions/workflows/tests.yml)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/demo-Streamlit-FF4B4B.svg)](https://biogeoda-trait-explorer.streamlit.app)
 
-BioGeoDA NLP Pipeline is a portfolio-ready reconstruction of the AI/NLP work I contributed to an industry capstone project at the University of Technology Sydney (UTS). The repository focuses on extracting plant trait information from sentences that have already been OCR processed.
+**[Launch the live Trait Explorer](https://biogeoda-trait-explorer.streamlit.app)**
 
-This is not a PDF downloader, OCR system, database application, or copy of the original team dashboard. It is an independent software project that turns the AI experiments into reusable Python modules, tests, sample data, and a Streamlit demo.
+## Overview
 
-## Problem Statement
+BioGeoDA is an NLP pipeline that converts OCR-processed botanical sentences into
+structured plant-trait records. It combines text normalisation, constrained
+trait-value mapping, extractive question answering, classical text
+classification, and deterministic post-processing behind a reproducible Python
+interface and interactive Streamlit application.
 
-Plant descriptions often contain trait information in free text, such as propagation method, bud bank location, germination treatment, flowering time, and plant height. The goal is to transform OCR-ready sentences into structured trait-value records while documenting where rule-based extraction, baseline classification, and extractive QA are useful or limited.
-
-## Original Capstone Context
-
-This project originated from a four-person industry capstone at UTS.
-
-I worked on the AI component with Hyeryeon Lee. My individual work focused on trait-to-value mappings, QA dataset generation, BERT QA fine-tuning, the TF-IDF baseline, propagation post-processing, and model evaluation.
-
-Hyeryeon primarily worked on PDF acquisition and OCR, initial document search, and the original team dashboards. Database and SQL components were handled by other team members.
-
-This repository is an independently restructured version of my AI contribution. Teammate-owned code, confidential client data, credentials, and copyrighted source documents are not included.
-
-## My Contributions
-
-- Trait-to-value mapping
-- QA example generation
-- BERT extractive QA fine-tuning
-- TF-IDF and Logistic Regression baseline
-- Propagation trait post-processing
-- Model evaluation and limitations analysis
-- Independent restructuring of the AI work into this repository
-- Independent development of the new Streamlit portfolio demo
-
-## NLP Pipeline
-
-1. Accept plant-related sentences that have already been OCR processed.
-2. Normalize text while preserving original capitalization where possible.
-3. Load trait-to-value mappings from a table.
-4. Generate valid BERT extractive QA examples only when the answer text appears in the context.
-5. Train and evaluate a TF-IDF + Logistic Regression baseline.
-6. Fine-tune BERT QA from prepared QA data when a user explicitly runs training.
-7. Extract Seed, Cutting, and Division propagation evidence with YAML-configured rules.
-8. Combine model-style outputs and rule-based outputs into a standard prediction schema.
-9. Demonstrate the workflow through a local Streamlit app.
-
-## Repository Structure
-
-```text
-biogeoda-nlp-pipeline/
-├── app.py
-├── README.md
-├── requirements.txt
-├── requirements-bert.txt
-├── .gitignore
-├── LICENSE
-├── configs/
-├── data/
-├── notebooks/
-├── results/
-├── src/
-└── tests/
-```
-
-## Streamlit Demo
-
-The app is called **BioGeoDA Trait Explorer**. It supports:
-
-- Rule-based propagation extraction, which runs locally and works without a model checkpoint.
-- Recorded BERT QA examples, which show safe synthetic demonstration rows rather than live inference.
-- Live BERT QA, which is enabled only when a fine-tuned checkpoint exists at `checkpoints/bert-qa`.
-
-The app does not connect to a database, Google Drive, external APIs, or private source documents. It does not display fabricated confidence scores; confidence is shown as `Not calibrated`.
-
-## Model Results
-
-The following metrics are historical results recorded from the original capstone notebooks, not results from the small public sample data.
-
-The TF-IDF baseline achieved 90.7% accuracy but only 46.2% macro F1, indicating that class imbalance substantially affected rare trait categories.
-
-The BERT extractive QA model was fine-tuned on a 20,000-example subset for one epoch and recorded an evaluation loss of approximately 0.321.
-
-The team reviewed more than 2,400 AI-generated candidates and retained 844 correctly matched trait records after manual validation.
-
-## Example Predictions
-
-Example output rows use this schema:
+The engineering objective is not document OCR. It is the next stage of the
+pipeline: converting noisy, domain-specific prose into records with a stable
+schema:
 
 ```text
 source_file,page,species_name,sentence,predicted_trait,predicted_value,method
 ```
 
-The sample files in `data/samples/` are synthetic and intentionally small. They demonstrate the format without exposing APJ source text, client data, or full OCR output.
+## Technical Problem
 
-## Limitations
+Plant traits are expressed with inconsistent vocabulary and uneven class
+frequency. A single description may contain a direct value span
+(`rhizome`), an implicit propagation cue (`stem cuttings strike readily`), or no
+relevant evidence. The system therefore separates three responsibilities:
 
-- The public sample data is for demonstration only and should not be interpreted as a model benchmark.
-- The historical TF-IDF baseline had high accuracy but low macro F1 because frequent classes dominated evaluation.
-- Rule-based propagation extraction is interpretable but keyword-dependent and may miss paraphrases.
-- Live BERT inference requires a fine-tuned checkpoint that is intentionally excluded from Git.
-- Confidence calibration has not been implemented.
-- PDF acquisition, OCR, database storage, SQL workflows, and the original team dashboards are out of scope.
+- **candidate classification** with TF-IDF and Logistic Regression;
+- **span extraction** with fine-tuned BERT question answering;
+- **high-precision post-processing** for explicit propagation language.
 
-## Installation
+This separation keeps outputs traceable and makes model limitations visible
+instead of hiding them behind one aggregate accuracy value.
+
+## Pipeline
+
+```mermaid
+flowchart LR
+    A["OCR-processed sentence"] --> B["Text normalisation"]
+    B --> C["Trait-value constraints"]
+    C --> D["TF-IDF classifier"]
+    C --> E["BERT extractive QA"]
+    D --> F["Standard record"]
+    E --> F
+    B --> G["Propagation rules"]
+    G --> F
+    F --> H["Evaluation and review"]
+```
+
+### 1. Text preprocessing
+
+`src/preprocess.py` normalises Unicode, smart quotes, dash variants, line
+breaks, tabs, and repeated whitespace while preserving useful case information.
+DataFrame preprocessing is non-mutating and validates the requested text
+column.
+
+### 2. Trait-value constraints
+
+`src/trait_mapping.py` converts tabular trait definitions into a normalised
+mapping. Allowed values constrain QA dataset construction and prevent unrelated
+answer strings from becoming labels.
+
+### 3. Extractive-QA dataset generation
+
+`src/dataset_builder.py` generates Hugging Face-compatible examples only when
+the answer occurs in the source context. Each record contains the question,
+answer text, and exact character offset:
+
+```python
+{
+    "context": "Buds occur on a woody rhizome.",
+    "question": "What is the bud bank location?",
+    "answers": {"text": ["rhizome"], "answer_start": [22]},
+}
+```
+
+The original experiment produced **137,408 valid QA examples**. BERT was
+fine-tuned on a **20,000-example subset for one epoch** and recorded an
+evaluation loss of approximately **0.321**.
+
+### 4. TF-IDF baseline
+
+`src/train_tfidf.py` provides a reproducible scikit-learn pipeline with
+stratified splitting, `TfidfVectorizer`, Logistic Regression, accuracy, macro
+F1, and per-class reporting. The historical experiment achieved:
+
+| Metric | Result | Interpretation |
+|---|---:|---|
+| Accuracy | 90.7% | Strong aggregate performance |
+| Macro F1 | 46.2% | Weak and uneven performance on rare classes |
+
+The 44.5-point gap is the important result: frequent categories dominated the
+accuracy score, so accuracy alone overstated performance for uncommon traits.
+
+### 5. Propagation post-processing
+
+`src/propagation_rules.py` loads explicit Seed, Cutting, and Division phrases
+from YAML and returns both the category and matched evidence. Ambiguous tokens
+such as `firm`, `remove`, `node`, `fire`, and standalone `rhizome` are excluded
+to reduce false positives. The rule path is fully runnable without a model
+checkpoint and supports batch CSV export.
+
+## Results
+
+| Component | Recorded outcome |
+|---|---|
+| QA data construction | 137,408 valid answer-span examples |
+| BERT QA fine-tuning | 20,000 examples, 1 epoch, evaluation loss ≈ 0.321 |
+| TF-IDF + Logistic Regression | 90.7% accuracy, 46.2% macro F1 |
+| Human validation | 2,400+ AI candidates reviewed; 844 records retained by the team |
+
+The public sample files are synthetic demonstrations and do **not** reproduce
+these metrics. The 844 retained records are a team validation outcome, not an
+individual model score.
+
+## Streamlit Demo
+
+The [BioGeoDA Trait Explorer](https://biogeoda-trait-explorer.streamlit.app)
+exposes the pipeline as six focused views:
+
+- preprocessing, trait mapping, and QA span construction;
+- synthetic BERT-QA workflow examples;
+- TF-IDF result interpretation;
+- live propagation extraction with matched evidence;
+- batch processing and standard-schema CSV download;
+- historical metric and class-imbalance analysis.
+
+Live BERT inference activates only when a fine-tuned checkpoint exists locally.
+The application never substitutes an unfine-tuned base model or fabricates a
+confidence score.
+
+## Repository Structure
+
+```text
+BioGeoDA/
+├── app.py                         # Streamlit application
+├── configs/
+│   └── propagation_keywords.yaml # Interpretable extraction rules
+├── data/samples/                 # Synthetic public examples
+├── results/                      # Historical metrics and safe outputs
+├── src/
+│   ├── preprocess.py
+│   ├── trait_mapping.py
+│   ├── dataset_builder.py
+│   ├── train_tfidf.py
+│   ├── train_bert_qa.py
+│   ├── inference.py
+│   ├── propagation_rules.py
+│   └── evaluate.py
+├── tests/
+└── .github/workflows/tests.yml
+```
+
+## Run Locally
 
 ```bash
-cd biogeoda-nlp-pipeline
+git clone https://github.com/Jinhyeok513/BioGeoDA.git
+cd BioGeoDA
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-Install BERT training dependencies only when you plan to fine-tune a QA model:
-
-```bash
-pip install -r requirements-bert.txt
-```
-
-## Running the App
-
-```bash
 streamlit run app.py
 ```
 
-## Running Tests
+Optional BERT dependencies are isolated from the lightweight demo:
+
+```bash
+pip install -r requirements-bert.txt
+python -m src.train_bert_qa --help
+```
+
+## Validation
 
 ```bash
 pytest -q
@@ -129,12 +181,32 @@ python -m compileall src app.py
 python -c "import app"
 ```
 
-## Data and Copyright
+GitHub Actions runs the same checks on every push and pull request. Tests cover
+Unicode cleaning, non-mutating DataFrame transforms, trait normalisation,
+answer-span validity, method–trait consistency, standard output schemas,
+multi-category extraction, and ambiguous-keyword false positives.
 
-This repository includes only synthetic examples and restructured code. It does not include customer-provided private data, APJ PDFs, complete OCR text, `.pem` files, passwords, API keys, database URLs, Google Drive personal paths, or teammate-owned source code.
+## Limitations
 
-Security review of the reference notebooks found Google Drive/Colab paths and Colab metadata patterns. No real credential values are copied into this repository.
+- Historical metrics come from the original experiment notebooks; the
+  synthetic public dataset is not a benchmark.
+- Rare traits remained difficult despite strong aggregate TF-IDF accuracy.
+- Keyword rules favour precision and can miss paraphrases.
+- BERT inference requires a fine-tuned checkpoint, intentionally excluded from
+  Git.
+- Confidence calibration and production monitoring are not implemented.
+- PDF acquisition, OCR, databases, and the original dashboard are outside this
+  repository's scope.
 
-## Team Attribution
+## Project Provenance
 
-The original capstone was a team project. Hyeryeon Lee primarily contributed PDF acquisition, OCR, initial document search, and original dashboard work. Other teammates handled database and SQL components. This repository isolates and restructures my AI/NLP contribution into a public, reviewable software project.
+The work originated in a four-person UTS industry capstone. My AI/NLP
+contribution covered trait-value mapping, QA dataset generation, BERT QA
+fine-tuning, the TF-IDF baseline, propagation post-processing, and evaluation.
+This repository independently restructures that work into reusable modules,
+tests, CI, and a new portfolio application. Teammate-owned code, confidential
+client data, credentials, and copyrighted source documents are not included.
+
+## License
+
+[MIT](LICENSE)
